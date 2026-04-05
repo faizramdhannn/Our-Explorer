@@ -363,7 +363,7 @@ export default function HomeScreen() {
                   ? 'Memuat...'
                   : visitedWithPhotos.filter(v => v.photo_url).length > 0
                     ? `${visitedWithPhotos.filter(v => v.photo_url).length} foto kenangan`
-                    : 'Belum ada foto — yuk check in!'}
+                    : 'Belum ada foto perjalanan'}
               </p>
             </div>
 

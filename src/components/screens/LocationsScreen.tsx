@@ -258,7 +258,7 @@ export default function LocationsScreen() {
           </motion.div>
           <div className="flex-1">
             <h1 className="text-2xl font-bold" style={{ color: colors.deep, fontFamily: "'Fredoka One', cursive" }}>Locations</h1>
-            <p className="text-xs" style={{ color: colors.earth }}>{locations.length} tempat menakjubkan</p>
+            <p className="text-xs" style={{ color: colors.earth }}>{locations.length} tempat</p>
           </div>
           <motion.button
             onClick={() => setShowAdd(true)}
@@ -417,7 +417,7 @@ export default function LocationsScreen() {
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                 >
                   <JijiSVG size={22} />
-                  Sudah Dikunjungi? Check In!
+                  Sudah Dikunjungi? Catat!
                 </motion.button>
               </div>
             </motion.div>
@@ -700,7 +700,7 @@ export default function LocationsScreen() {
                     <motion.div className="flex flex-col items-center py-8" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
                       <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 1.5, repeat: Infinity }}><KodamaSVG size={70} /></motion.div>
                       <p className="mt-4 text-lg font-bold" style={{ color: colors.deep, fontFamily: "'Fredoka One', cursive" }}>Lokasi ditambahkan!</p>
-                      <p className="text-xs mt-1" style={{ color: colors.earth }}>Data tersimpan ke spreadsheet ✨</p>
+                      <p className="text-xs mt-1" style={{ color: colors.earth }}>Data tersimpan ✨</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -742,7 +742,7 @@ export default function LocationsScreen() {
                       <motion.p className="text-xs text-center py-2 px-4 rounded-xl" style={{ backgroundColor: '#FFE0E0', color: '#CC4444' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{submitError}</motion.p>
                     )}
                     <motion.button onClick={handleSubmit} disabled={submitting} className="w-full py-4 rounded-2xl font-bold text-sm mt-2" style={{ backgroundColor: submitting ? colors.muted : colors.deep, color: 'white', opacity: submitting ? 0.7 : 1 }} whileHover={!submitting ? { scale: 1.02 } : {}} whileTap={!submitting ? { scale: 0.98 } : {}}>
-                      {submitting ? 'Menyimpan ke Spreadsheet...' : '✨ Simpan Lokasi'}
+                      {submitting ? 'Menyimpan...' : '✨ Simpan Lokasi'}
                     </motion.button>
                   </div>
                 )}
