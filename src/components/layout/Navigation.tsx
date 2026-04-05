@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '@/lib/theme-context';
 import { TotoroSVG, SootSpriteSVG, KodamaSVG, JijiSVG, ChibiTotoroSVG } from '../ui/GhibliCharacters';
@@ -29,34 +30,56 @@ const navItems = [
 
 export default function Navigation() {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { colors, theme } = useTheme();
   const pathname = usePathname();
 
-  return (
-    <>
-      {/* Backdrop */}
-      <AnimatePresence>
-        {open && (
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Close sidebar on route change
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  // Prevent body scroll when sidebar open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
+
+  const sidebarContent = (
+    <AnimatePresence>
+      {open && (
+        <>
+          {/* Backdrop */}
           <motion.div
-            className="fixed inset-0 z-40"
-            style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+            className="fixed inset-0"
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.35)',
+              zIndex: 9998,
+            }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setOpen(false)}
           />
-        )}
-      </AnimatePresence>
 
-      {/* Sidebar */}
-      <AnimatePresence>
-        {open && (
+          {/* Sidebar */}
           <motion.div
-            className="fixed top-0 left-0 h-full z-50 flex flex-col overflow-hidden"
+            className="fixed top-0 left-0 h-full flex flex-col overflow-hidden"
             style={{
               width: 'min(75vw, 300px)',
               background: colors.gradient,
-              boxShadow: '4px 0 30px rgba(0,0,0,0.15)',
+              boxShadow: '4px 0 30px rgba(0,0,0,0.18)',
+              zIndex: 9999,
             }}
             initial={{ x: '-100%' }}
             animate={{ x: 0 }}
@@ -64,7 +87,10 @@ export default function Navigation() {
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           >
             {/* Sidebar Header */}
-            <div className="pt-16 pb-6 px-6 flex flex-col items-center" style={{ borderBottom: `1px solid ${colors.border}` }}>
+            <div
+              className="pt-16 pb-6 px-6 flex flex-col items-center"
+              style={{ borderBottom: `1px solid ${colors.border}` }}
+            >
               <motion.div
                 animate={{ y: [0, -6, 0] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
@@ -91,7 +117,7 @@ export default function Navigation() {
                     key={href}
                     initial={{ x: -30, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.1 + i * 0.08 }}
+                    transition={{ delay: 0.08 + i * 0.08 }}
                   >
                     <Link
                       href={href}
@@ -122,7 +148,7 @@ export default function Navigation() {
               })}
             </nav>
 
-            {/* Bottom floating soot sprites */}
+            {/* Bottom soot sprites */}
             <div className="px-6 pb-10">
               <div className="flex gap-3 justify-center">
                 {[...Array(5)].map((_, i) => (
@@ -137,25 +163,36 @@ export default function Navigation() {
               </div>
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </>
+      )}
+    </AnimatePresence>
+  );
 
+  return (
+    <>
       {/* Hamburger Button */}
       <motion.button
         onClick={() => setOpen(!open)}
-        className="w-10 h-10 flex flex-col justify-center items-center gap-1.5 rounded-xl z-50"
+        className="w-10 h-10 flex flex-col justify-center items-center gap-1.5 rounded-xl relative"
         style={{
           backgroundColor: colors.card,
           boxShadow: `0 2px 10px ${colors.border}`,
           border: `1.5px solid ${colors.border}`,
+          zIndex: 10000,
         }}
         whileTap={{ scale: 0.9 }}
+        aria-label="Toggle navigation"
+        aria-expanded={open}
       >
         {[0, 1, 2].map((i) => (
           <motion.span
             key={i}
             className="block rounded-full"
-            style={{ backgroundColor: colors.deep, height: '2px', width: i === 1 ? '14px' : '18px' }}
+            style={{
+              backgroundColor: colors.deep,
+              height: '2px',
+              width: i === 1 ? '14px' : '18px',
+            }}
             animate={
               open
                 ? i === 0
@@ -169,6 +206,9 @@ export default function Navigation() {
           />
         ))}
       </motion.button>
+
+      {/* Portal: render sidebar & backdrop outside header DOM tree */}
+      {mounted && createPortal(sidebarContent, document.body)}
     </>
   );
 }

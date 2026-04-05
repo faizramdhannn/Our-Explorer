@@ -75,7 +75,7 @@ export default function VisitedScreen() {
               Visited
             </h1>
             <p className="text-xs" style={{ color: colors.earth }}>
-              {visits.length} kenangan perjalanan
+              {visits.length} rekam jejak
             </p>
           </div>
         </motion.div>
@@ -90,7 +90,7 @@ export default function VisitedScreen() {
               <SootSpriteSVG size={50} />
             </motion.div>
             <p className="mt-4 text-sm" style={{ color: colors.earth }}>
-              Mengumpulkan kenangan...
+              Mengumpulkan...
             </p>
           </div>
         )}

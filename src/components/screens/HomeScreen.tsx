@@ -43,7 +43,7 @@ export default function HomeScreen() {
     {
       href: '/visited',
       title: 'Visited',
-      subtitle: 'Kenangan kita',
+      subtitle: 'Rekam Jejak',
       Char: JijiSVG,
       charSize: 50,
       bg: colors.secondary + '40',
@@ -138,8 +138,8 @@ export default function HomeScreen() {
             transition={{ delay: 0.4 }}
           >
             {theme === 'female'
-              ? 'Setiap perjalanan adalah kisah cinta yang indah'
-              : 'Setiap langkah adalah petualangan baru'}
+              ? 'Hallo Afri, Setiap perjalanan mengajarkan sesuatu yang bermakna'
+              : 'Halo Faiz, Setiap langkah adalah petualangan baru'}
           </motion.p>
         </motion.div>
 
