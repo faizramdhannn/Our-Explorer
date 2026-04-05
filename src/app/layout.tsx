@@ -5,7 +5,7 @@ import { AuthProvider } from '@/lib/auth-context';
 
 export const metadata: Metadata = {
   title: 'Our Explorer',
-  description: 'Jelajahi tempat-tempat indah bersama — Studio Ghibli inspired travel journal',
+  description: 'Jelajahi tempat-tempat indah bersama',
   manifest: '/manifest.json',
 };
 
