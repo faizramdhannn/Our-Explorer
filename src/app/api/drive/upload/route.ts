@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,43 +10,58 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'File wajib diisi' }, { status: 400 });
     }
 
-    // Convert file to base64
-    const arrayBuffer = await file.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
-    // Upload ke ImgBB
-    const imgbbApiKey = process.env.IMGBB_API_KEY;
-    if (!imgbbApiKey) {
-      return NextResponse.json({ error: 'IMGBB_API_KEY belum dikonfigurasi' }, { status: 500 });
+    if (!cloudName || !apiKey || !apiSecret) {
+      return NextResponse.json({ error: 'Cloudinary belum dikonfigurasi' }, { status: 500 });
     }
 
-    const body = new URLSearchParams();
-    body.append('image', base64);
-    body.append('name', `visit_${Date.now()}_${file.name}`);
+    // Convert file to base64 data URI
+    const arrayBuffer = await file.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    const dataUri = `data:${file.type};base64,${base64}`;
 
-    const uploadRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
-      method: 'POST',
-      body,
-    });
+    // Generate signature untuk authenticated upload
+    const timestamp = Math.round(Date.now() / 1000);
+    const folder = 'our-explorer';
+    const publicId = `visit_${Date.now()}`;
+
+    const signatureString = `folder=${folder}&public_id=${publicId}&timestamp=${timestamp}${apiSecret}`;
+    const signature = crypto.createHash('sha256').update(signatureString).digest('hex');
+
+    // Upload ke Cloudinary
+    const uploadForm = new FormData();
+    uploadForm.append('file', dataUri);
+    uploadForm.append('api_key', apiKey);
+    uploadForm.append('timestamp', String(timestamp));
+    uploadForm.append('signature', signature);
+    uploadForm.append('folder', folder);
+    uploadForm.append('public_id', publicId);
+
+    const uploadRes = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      { method: 'POST', body: uploadForm }
+    );
 
     const uploadData = await uploadRes.json();
 
-    if (!uploadData.success) {
-      throw new Error(uploadData.error?.message || 'Upload ke ImgBB gagal');
+    if (uploadData.error) {
+      throw new Error(uploadData.error.message || 'Upload ke Cloudinary gagal');
     }
 
-    const publicUrl = uploadData.data.url;          // direct image URL
-    const deleteUrl = uploadData.data.delete_url;   // opsional, untuk hapus nanti
+    // secure_url adalah direct image URL yang selalu bisa diakses
+    const publicUrl = uploadData.secure_url;
+    console.log('Cloudinary upload success:', publicUrl);
 
     return NextResponse.json({
       success: true,
       url: publicUrl,
-      deleteUrl,
-      // backward compat — komponen lama pakai `webViewLink`
-      webViewLink: uploadData.data.display_url,
+      webViewLink: publicUrl,
     });
   } catch (err: unknown) {
-    console.error('ImgBB upload error:', err);
+    console.error('Cloudinary upload error:', err);
     const message = err instanceof Error ? err.message : 'Upload gagal';
     return NextResponse.json({ error: message }, { status: 500 });
   }
