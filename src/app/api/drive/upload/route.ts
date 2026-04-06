@@ -1,74 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { google } from 'googleapis';
-import { Readable } from 'stream';
-
-async function getDriveClient() {
-  const auth = new google.auth.JWT({
-    email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    scopes: ['https://www.googleapis.com/auth/drive.file'],
-  });
-  return google.drive({ version: 'v3', auth });
-}
 
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file = formData.get('file') as File;
-    const visitId = formData.get('visitId') as string;
 
     if (!file) {
       return NextResponse.json({ error: 'File wajib diisi' }, { status: 400 });
     }
 
-    const drive = await getDriveClient();
-
-    // Convert File to Buffer → Readable stream
+    // Convert file to base64
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const stream = Readable.from(buffer);
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
 
-    // Folder ID dari env (opsional - jika tidak ada, upload ke root Drive)
-    const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
-
-    const fileMetadata: Record<string, unknown> = {
-      name: `visit_${visitId}_${Date.now()}_${file.name}`,
-    };
-    if (folderId) {
-      fileMetadata.parents = [folderId];
+    // Upload ke ImgBB
+    const imgbbApiKey = process.env.IMGBB_API_KEY;
+    if (!imgbbApiKey) {
+      return NextResponse.json({ error: 'IMGBB_API_KEY belum dikonfigurasi' }, { status: 500 });
     }
 
-    const uploaded = await drive.files.create({
-      requestBody: fileMetadata,
-      media: {
-        mimeType: file.type || 'image/jpeg',
-        body: stream,
-      },
-      fields: 'id, name, webViewLink, webContentLink',
+    const body = new URLSearchParams();
+    body.append('image', base64);
+    body.append('name', `visit_${Date.now()}_${file.name}`);
+
+    const uploadRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
+      method: 'POST',
+      body,
     });
 
-    const fileId = uploaded.data.id!;
+    const uploadData = await uploadRes.json();
 
-    // Jadikan file bisa diakses publik (anyone with link can view)
-    await drive.permissions.create({
-      fileId,
-      requestBody: {
-        role: 'reader',
-        type: 'anyone',
-      },
-    });
+    if (!uploadData.success) {
+      throw new Error(uploadData.error?.message || 'Upload ke ImgBB gagal');
+    }
 
-    // URL langsung untuk embed/img tag
-    const publicUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+    const publicUrl = uploadData.data.url;          // direct image URL
+    const deleteUrl = uploadData.data.delete_url;   // opsional, untuk hapus nanti
 
     return NextResponse.json({
       success: true,
-      fileId,
       url: publicUrl,
-      webViewLink: uploaded.data.webViewLink,
+      deleteUrl,
+      // backward compat — komponen lama pakai `webViewLink`
+      webViewLink: uploadData.data.display_url,
     });
   } catch (err: unknown) {
-    console.error('Drive upload error:', err);
+    console.error('ImgBB upload error:', err);
     const message = err instanceof Error ? err.message : 'Upload gagal';
     return NextResponse.json({ error: message }, { status: 500 });
   }
